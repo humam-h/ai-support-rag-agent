@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+openai
+python-dotenv
+numpy
+psycopg[binary]
+pytest
+
