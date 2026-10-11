@@ -28,3 +28,12 @@ class TriageResponse(BaseModel):
     ]
     answer: str
     sources: list[SourceChunk]
+
+class AgentResponse(BaseModel):
+    status: Literal[
+        "answered",
+        "needs_human_action",
+        "insufficient_knowledge",
+    ]
+    answer: str
+    iterations: int

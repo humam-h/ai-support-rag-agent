@@ -5,4 +5,5 @@ python-dotenv
 numpy
 psycopg[binary]
 pytest
+httpx
 

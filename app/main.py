@@ -1,6 +1,8 @@
 from fastapi import FastAPI
+from app.agent import run_agent
 
 from app.models import (
+    AgentResponse,
     SourceChunk,
     TicketRequest,
     TriageResponse,
@@ -12,7 +14,6 @@ app = FastAPI(
     title="AI Support RAG Agent",
     version="0.1.0",
 )
-
 
 @app.get("/health")
 def health():
@@ -49,4 +50,23 @@ Description:
         status=result["status"],
         answer=result["answer"],
         sources=sources,
+    )
+@app.post(
+    "/tickets/agent",
+    response_model=AgentResponse,
+)
+def agent_ticket(ticket: TicketRequest):
+    query = f"""
+Subject: {ticket.subject}
+
+Description:
+{ticket.description}
+""".strip()
+
+    result = run_agent(query)
+
+    return AgentResponse(
+        status=result["status"],
+        answer=result["answer"],
+        iterations=result["iterations"],
     )
