@@ -44,10 +44,11 @@ def test_agent_stops_at_max_iterations(monkeypatch):
     )
 
     result = run_agent(
-        query="Test support request",
-        max_iterations=3,
-        model_client=fake_client,
-    )
+    subject="Test issue",
+    description="This is a test support request.",
+    max_iterations=3,
+    model_client=fake_client,
+)
 
     assert result["status"] == "needs_human_action"
     assert result["iterations"] == 3

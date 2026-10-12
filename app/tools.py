@@ -22,13 +22,15 @@ def create_escalation_tool(
     subject: str,
     description: str,
     reason: str,
+    idempotency_key: str,
 ) -> dict:
     """
-    Create an escalation record for a support request
+    Create an idempotent escalation record for a support request
     that requires human review.
     """
     return create_escalation(
         subject=subject,
         description=description,
         reason=reason,
+        idempotency_key=idempotency_key,
     )

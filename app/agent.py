@@ -59,10 +59,19 @@ def execute_tool(name, arguments, original_query):
         f"Unknown tool: {name}"
     )
 def run_agent(
-    query,
+    subject,
+    description,
     max_iterations=5,
     model_client=None,
 ):
+    query = f"""
+Subject: {subject}
+Description:
+
+{description}
+
+""".strip()
+    
     if model_client is None:
         model_client = client
     input_items = [

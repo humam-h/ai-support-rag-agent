@@ -9,11 +9,14 @@ def test_create_escalation_tool():
         subject="Test escalation",
         description="Test support request.",
         reason="Human review is required.",
+        idempotency_key="test-escalation-tool",
     )
 
     assert result["id"] is not None
     assert result["subject"] == "Test escalation"
     assert result["status"] == "open"
+    assert result["idempotency_key"] == "test-escalation-tool"
+    
 
 
 def test_search_knowledge_tool():

@@ -63,7 +63,11 @@ Description:
 {ticket.description}
 """.strip()
 
-    result = run_agent(query)
+    result = run_agent(
+        subject=ticket.subject,
+        description=ticket.description,
+                       
+        )
 
     return AgentResponse(
         status=result["status"],
