@@ -60,6 +60,19 @@ giving troubleshooting instructions or information.
 Choose an action capability when actually fulfilling the
 request requires changing something or performing an action,
 rather than merely explaining how it should be done.
+
+When the user explicitly asks for an action, classify the required
+capability according to that requested action, even if the knowledge
+base could provide related guidance.
+
+Examples:
+- "Please unlock my account" requires "unlock_account".
+- "Reset my password" requires "reset_password".
+- "How do I troubleshoot my locked account?" may require
+  "provide_guidance".
+
+Do not classify an explicit action request as "provide_guidance"
+merely because guidance could also be provided.
 """.strip(),
         input=f"""
 SUPPORT REQUEST:

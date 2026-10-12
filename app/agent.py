@@ -38,6 +38,15 @@ INSUFFICIENT_KNOWLEDGE_RESPONSE = (
     "This request requires human review."
 )
 
+def can_create_escalation(
+    knowledge_searched: bool,
+    knowledge_found: bool,
+) -> bool:
+    return (
+        knowledge_searched
+        and not knowledge_found
+    )
+
 
 def execute_tool(name, arguments, original_query):
     if name == "search_knowledge":
@@ -62,6 +71,7 @@ def run_agent(
             "content": query,
         }
     ]
+
 
     instructions = """
 You are an IT support agent.
