@@ -4,7 +4,11 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from app.tools import search_knowledge_tool
+from app.tools import (
+    create_escalation_tool,
+    search_knowledge_tool,
+)
+
 from app.capabilities import SYSTEM_CAPABILITIES
 
 load_dotenv()
@@ -47,6 +51,8 @@ def can_create_escalation(
         and not knowledge_found
     )
 
+def escalation_idempotency_key(request_id: str) -> str:
+    return f"ticket:{request_id}:escalation"
 
 def execute_tool(name, arguments, original_query):
     if name == "search_knowledge":
@@ -59,6 +65,7 @@ def execute_tool(name, arguments, original_query):
         f"Unknown tool: {name}"
     )
 def run_agent(
+    request_id,
     subject,
     description,
     max_iterations=5,
@@ -174,9 +181,35 @@ for the human team.
                 item.name == "search_knowledge"
                 and not result["results"]
             ):
-                return {
-                    "status": "insufficient_knowledge",
-                    "answer": INSUFFICIENT_KNOWLEDGE_RESPONSE,
+                allowed = can_create_escalation(
+                    knowledge_searched=True,
+                    knowledge_found=False,
+                )
+                if not allowed:
+                    return {
+                        "status": "insufficient_knowledge",
+                        "answer": INSUFFICIENT_KNOWLEDGE_RESPONSE,
+                        "iterations": iteration + 1,
+                    }
+                escalation = create_escalation_tool(
+                    subject=subject,
+                    description=description,
+                    reason=(
+                        "No sufficiently relevant knowledge-base "
+                        "information was found."
+                    ),
+                    idempotency_key=escalation_idempotency_key(
+                        request_id
+                    ),
+                )
+                return{
+                    "status": "needs_human_action",
+                    "answer": (
+                        "I could not find sufficiently relevant information "
+                        "in the internal knowledge base. "
+                        f"Escalation #{escalation['id']} was created "
+                        "for human review."
+                    ),
                     "iterations": iteration + 1,
                 }
 

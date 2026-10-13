@@ -1,4 +1,13 @@
-from app.agent import can_create_escalation
+from app.agent import (
+    can_create_escalation,
+    escalation_idempotency_key,
+)
+
+
+def test_escalation_idempotency_key():
+    key = escalation_idempotency_key("ticket-1001")
+
+    assert key == "ticket:ticket-1001:escalation"
 
 
 def test_escalation_allowed_after_empty_search():

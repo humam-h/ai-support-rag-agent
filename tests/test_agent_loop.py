@@ -44,6 +44,7 @@ def test_agent_stops_at_max_iterations(monkeypatch):
     )
 
     result = run_agent(
+    request_id="reuest_id",
     subject="Test issue",
     description="This is a test support request.",
     max_iterations=3,

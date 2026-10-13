@@ -10,6 +10,7 @@ def test_agent_endpoint_unknown_issue():
     response = client.post(
         "/tickets/agent",
         json={
+            "request_id": "test-api-printer-001",
             "subject": "Printer error 49",
             "description": (
                 "My printer displays error 49 and will not print. "
@@ -22,15 +23,17 @@ def test_agent_endpoint_unknown_issue():
 
     data = response.json()
 
-    assert data["status"] == "insufficient_knowledge"
+    assert data["status"] == "needs_human_action"
     assert data["iterations"] == 1
-    assert "human review" in data["answer"].lower()
+    assert "Escalation #" in data["answer"]
+    assert "human review" in data["answer"]
 
 
 def test_agent_endpoint_known_vpn_issue():
     response = client.post(
         "/tickets/agent",
         json={
+            "request_id": "test-vpn-001",
             "subject": "VPN hostname problem",
             "description": (
                 "My VPN connects, but I cannot access internal "

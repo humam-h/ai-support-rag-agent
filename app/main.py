@@ -64,6 +64,7 @@ Description:
 """.strip()
 
     result = run_agent(
+        request_id=ticket.request_id,
         subject=ticket.subject,
         description=ticket.description,
                        
