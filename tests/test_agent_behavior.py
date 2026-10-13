@@ -29,7 +29,9 @@ def test_unknown_printer_issue_is_escalated():
 
     assert result["status"] == "needs_human_action"
     assert result["iterations"] == 1
-    assert "Escalation #" in result["answer"]
+    assert result["escalation"] is not None
+    assert result["escalation"]["id"] is not None
+    assert result["escalation"]["status"] == "open"
     assert "human review" in result["answer"]
 
 def test_unknown_printer_escalation_is_idempotent():
@@ -51,6 +53,13 @@ def test_unknown_printer_escalation_is_idempotent():
         ),
     )
 
-    assert first["status"] == "needs_human_action"
-    assert second["status"] == "needs_human_action"
-    assert first["answer"] == second["answer"]
+    assert first["escalation"] is not None
+    assert second["escalation"] is not None
+
+    assert (
+        first["escalation"]["id"]
+        == second["escalation"]["id"]
+    )
+
+    assert first["escalation"]["status"] == "open"
+    assert second["escalation"]["status"] == "open"

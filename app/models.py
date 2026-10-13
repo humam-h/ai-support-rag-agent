@@ -24,6 +24,11 @@ class TriageResponse(BaseModel):
     answer: str
     sources: list[SourceChunk]
 
+class EscalationInfo(BaseModel):
+    id: int
+    status: str
+
+
 class AgentResponse(BaseModel):
     status: Literal[
         "answered",
@@ -32,3 +37,4 @@ class AgentResponse(BaseModel):
     ]
     answer: str
     iterations: int
+    escalation: EscalationInfo | None = None

@@ -207,10 +207,13 @@ for the human team.
                     "answer": (
                         "I could not find sufficiently relevant information "
                         "in the internal knowledge base. "
-                        f"Escalation #{escalation['id']} was created "
-                        "for human review."
+                        "An escalation was created for human review."
                     ),
                     "iterations": iteration + 1,
+                    "escalation": {
+                        "id": escalation["id"],
+                        "status": escalation["status"],
+                    },
                 }
 
             input_items.append(

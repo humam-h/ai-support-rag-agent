@@ -71,7 +71,8 @@ Description:
         )
 
     return AgentResponse(
-        status=result["status"],
-        answer=result["answer"],
-        iterations=result["iterations"],
-    )
+    status=result["status"],
+    answer=result["answer"],
+    iterations=result["iterations"],
+    escalation=result.get("escalation"),
+)

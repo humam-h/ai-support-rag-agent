@@ -25,7 +25,9 @@ def test_agent_endpoint_unknown_issue():
 
     assert data["status"] == "needs_human_action"
     assert data["iterations"] == 1
-    assert "Escalation #" in data["answer"]
+    assert data["escalation"] is not None
+    assert data["escalation"]["id"] is not None
+    assert data["escalation"]["status"] == "open"
     assert "human review" in data["answer"]
 
 
@@ -47,5 +49,6 @@ def test_agent_endpoint_known_vpn_issue():
     data = response.json()
 
     assert data["status"] == "answered"
+    assert data["escalation"] is None
     assert data["iterations"] >= 1
     assert data["answer"]
