@@ -38,3 +38,18 @@ class AgentResponse(BaseModel):
     answer: str
     iterations: int
     escalation: EscalationInfo | None = None
+
+class AgentResponse(BaseModel):
+    status: Literal[
+        "answered",
+        "needs_human_action",
+        "insufficient_knowledge",
+    ]
+    answer: str
+    iterations: int
+    escalation: EscalationInfo | None = None
+    action_status: Literal[
+        "none",
+        "escalation_created",
+        "escalation_failed",
+    ] = "none"

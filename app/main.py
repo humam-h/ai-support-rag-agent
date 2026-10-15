@@ -75,4 +75,5 @@ Description:
     answer=result["answer"],
     iterations=result["iterations"],
     escalation=result.get("escalation"),
+    action_status=result.get("action_status", "none"),
 )

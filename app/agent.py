@@ -219,6 +219,7 @@ for the human team.
                         ),
                         "iterations": iteration + 1,
                         "escalation": None,
+                        "action_status": "escalation_failed",
                     }
                 return{
                     "status": "needs_human_action",
@@ -232,6 +233,7 @@ for the human team.
                         "id": escalation["id"],
                         "status": escalation["status"],
                     },
+                    "action_status": "escalation_created",
                 }
 
             input_items.append(
