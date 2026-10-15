@@ -10,6 +10,7 @@ from app.tools import (
 )
 
 from app.capabilities import SYSTEM_CAPABILITIES
+from app.audit import record_audit_event
 
 load_dotenv()
 
@@ -202,11 +203,20 @@ for the human team.
                         idempotency_key=escalation_idempotency_key(
                             request_id
                         ),
+
                     )
                 except Exception as exc:
                     print(
                         "ESCALATION CREATION FAILED:",
                         repr(exc),
+                    )
+                    record_audit_event(
+                        request_id=request_id,
+                        event_type="escalation_creation",
+                        outcome="failure",
+                        details={
+                            "error_type": type(exc).__name__,
+                        },
                     )
 
                     return {
@@ -221,6 +231,14 @@ for the human team.
                         "escalation": None,
                         "action_status": "escalation_failed",
                     }
+                record_audit_event(
+                    request_id=request_id,
+                    event_type="escalation_creation",
+                    outcome="success",
+                    details={
+                        "escalation_id": escalation["id"],
+                    },
+                )
                 return{
                     "status": "needs_human_action",
                     "answer": (

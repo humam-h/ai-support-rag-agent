@@ -95,4 +95,69 @@ def test_escalation_failure_does_not_claim_success(
     "could not be created"
     in result["answer"].lower()
 )
-    
+def test_successful_escalation_records_audit_event(
+    monkeypatch,
+):
+    audit_calls = []
+
+    def fake_record_audit_event(**kwargs):
+        audit_calls.append(kwargs)
+        return True
+
+    monkeypatch.setattr(
+        "app.agent.record_audit_event",
+        fake_record_audit_event,
+    )
+
+    result = run_agent(
+        request_id="test-audit-success-001",
+        subject="Printer error 49",
+        description=(
+            "My printer displays error 49 and will not print."
+        ),
+    )
+
+    assert result["action_status"] == "escalation_created"
+
+    assert len(audit_calls) == 1
+
+    event = audit_calls[0]
+
+    assert event["request_id"] == "test-audit-success-001"
+    assert event["event_type"] == "escalation_creation"
+    assert event["outcome"] == "success"
+
+    assert (
+        event["details"]["escalation_id"]
+        == result["escalation"]["id"]
+    ) 
+def test_audit_failure_does_not_change_escalation_success(
+    monkeypatch,
+):
+    def failing_record_audit_event(**kwargs):
+        return False
+
+    monkeypatch.setattr(
+        "app.agent.record_audit_event",
+        failing_record_audit_event,
+    )
+
+    result = run_agent(
+        request_id="test-agent-audit-failure-001",
+        subject="Printer error 49",
+        description=(
+            "My printer displays error 49 and will not print."
+        ),
+    )
+
+    assert result["status"] == "needs_human_action"
+    assert result["action_status"] == "escalation_created"
+
+    assert result["escalation"] is not None
+    assert result["escalation"]["id"] is not None
+    assert result["escalation"]["status"] == "open"
+
+    assert (
+        "an escalation was created"
+        in result["answer"].lower()
+    )
