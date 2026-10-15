@@ -9,8 +9,13 @@ services:
     ports:
       - "5432:5432"
     volumes:
-    - postgres_data:/var/lib/postgresql/data
-    - ./migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U support_user -d support_rag"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build: .
@@ -21,7 +26,18 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+
+  ingest:
+    build: .
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DATABASE_URL: postgresql://support_user:support_password@postgres:5432/support_rag
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["python", "-m", "app.ingest"]
 
 volumes:
   postgres_data:
