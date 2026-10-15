@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from app.agent import run_agent
 
 from app.models import (
@@ -8,7 +8,7 @@ from app.models import (
     TriageResponse,
 )
 from app.rag import generate_answer
-
+from app.database import check_database_readiness
 
 app = FastAPI(
     title="AI Support RAG Agent",
@@ -20,6 +20,27 @@ def health():
     return {
         "status": "healthy",
         "service": "ai-support-rag-agent",
+    }
+
+@app.get("/ready")
+def readiness():
+    try:
+        result = check_database_readiness()
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="Database is not ready.",
+        )
+
+    if not result["knowledge_ready"]:
+        raise HTTPException(
+            status_code=503,
+            detail="Knowledge base is not ready.",
+        )
+
+    return {
+        "status": "ready",
+        **result,
     }
 
 
