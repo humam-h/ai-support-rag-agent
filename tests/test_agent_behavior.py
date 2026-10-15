@@ -63,3 +63,36 @@ def test_unknown_printer_escalation_is_idempotent():
 
     assert first["escalation"]["status"] == "open"
     assert second["escalation"]["status"] == "open"
+
+def test_escalation_failure_does_not_claim_success(
+    monkeypatch,
+):
+    def failing_create_escalation_tool(**kwargs):
+        raise RuntimeError("Database unavailable")
+
+    monkeypatch.setattr(
+        "app.agent.create_escalation_tool",
+        failing_create_escalation_tool,
+    )
+
+    result = run_agent(
+        request_id="test-escalation-failure-001",
+        subject="Printer error 49",
+        description=(
+            "My printer displays error 49 and will not print."
+        ),
+    )
+
+    assert result["status"] == "needs_human_action"
+    assert result["escalation"] is None
+
+    assert "human review" in result["answer"].lower()
+    assert (
+    "an escalation was created"
+    not in result["answer"].lower()
+)
+    assert (
+    "could not be created"
+    in result["answer"].lower()
+)
+    

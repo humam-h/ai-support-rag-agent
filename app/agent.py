@@ -191,17 +191,35 @@ for the human team.
                         "answer": INSUFFICIENT_KNOWLEDGE_RESPONSE,
                         "iterations": iteration + 1,
                     }
-                escalation = create_escalation_tool(
-                    subject=subject,
-                    description=description,
-                    reason=(
-                        "No sufficiently relevant knowledge-base "
-                        "information was found."
-                    ),
-                    idempotency_key=escalation_idempotency_key(
-                        request_id
-                    ),
-                )
+                try:
+                    escalation = create_escalation_tool(
+                        subject=subject,
+                        description=description,
+                        reason=(
+                            "No sufficiently relevant knowledge-base "
+                            "information was found."
+                        ),
+                        idempotency_key=escalation_idempotency_key(
+                            request_id
+                        ),
+                    )
+                except Exception as exc:
+                    print(
+                        "ESCALATION CREATION FAILED:",
+                        repr(exc),
+                    )
+
+                    return {
+                        "status": "needs_human_action",
+                        "answer": (
+                            "I could not find sufficiently relevant information "
+                            "in the internal knowledge base. "
+                            "Human review is required, but the escalation "
+                            "could not be created."
+                        ),
+                        "iterations": iteration + 1,
+                        "escalation": None,
+                    }
                 return{
                     "status": "needs_human_action",
                     "answer": (
