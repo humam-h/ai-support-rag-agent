@@ -9,6 +9,12 @@ from app.models import (
 )
 from app.rag import generate_answer
 from app.database import check_database_readiness
+from app.logging_config import configure_logging
+
+
+configure_logging()
+
+app = FastAPI()
 
 app = FastAPI(
     title="AI Support RAG Agent",

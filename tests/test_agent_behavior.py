@@ -1,4 +1,4 @@
-from app.agent import run_agent
+from app.agent import run_agent, _complete_agent_request
 
 
 def test_known_vpn_issue_is_answered():
@@ -161,3 +161,26 @@ def test_audit_failure_does_not_change_escalation_success(
         "an escalation was created"
         in result["answer"].lower()
     )
+def test_agent_logs_request_completion(caplog):
+    result = {
+        "status": "answered",
+        "answer": "Test answer",
+        "iterations": 2,
+    }
+
+    with caplog.at_level("INFO", logger="app.agent"):
+        returned = _complete_agent_request(
+            "logging-test-123",
+            result,
+        )
+
+    assert returned == result
+
+    assert (
+        "Agent request completed "
+        "request_id=logging-test-123 "
+        "status=answered "
+        "action_status=none "
+        "iterations=2"
+    ) in caplog.text
+    

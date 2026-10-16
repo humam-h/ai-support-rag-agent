@@ -1,6 +1,10 @@
 import json
 
 from app.database import get_connection
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_audit_event(
@@ -64,9 +68,7 @@ def record_audit_event(
         )
         return True
 
-    except Exception as exc:
-        print(
-            "AUDIT EVENT CREATION FAILED:",
-            repr(exc),
-        )
+    except Exception:
+        logger.exception("Failed to record audit event")
         return False
+        

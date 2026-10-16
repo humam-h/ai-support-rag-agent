@@ -11,6 +11,21 @@ from app.tools import (
 
 from app.capabilities import SYSTEM_CAPABILITIES
 from app.audit import record_audit_event
+import logging
+
+logger = logging.getLogger(__name__)
+
+def _complete_agent_request(request_id, result):
+    logger.info(
+        "Agent request completed request_id=%s status=%s "
+        "action_status=%s iterations=%s",
+        request_id,
+        result["status"],
+        result.get("action_status", "none"),
+        result["iterations"],
+    )
+    return result
+
 
 load_dotenv()
 
@@ -72,6 +87,11 @@ def run_agent(
     max_iterations=5,
     model_client=None,
 ):
+    logger.info(
+        "Agent request started request_id=%s",
+        request_id,
+    )
+
     query = f"""
 Subject: {subject}
 Description:
@@ -90,7 +110,7 @@ Description:
     ]
 
 
-    instructions = """
+    instructions = f"""
 You are an IT support agent.
 
 SYSTEM CAPABILITIES:
@@ -116,18 +136,24 @@ information-gathering requirements, or escalation procedures
 from your own knowledge.
 
 Do not claim that you performed, initiated, or will perform
+an action unless the application has confirmed that the action
+was successfully completed.
 
-an action unless an available tool actually allows that action.
+If human action is required, recommend human review. Do not
+claim that you contacted, messaged, or forwarded the request
+to an external human support system.
 
-If human action is required, recommend human review without
-
-claiming that you can contact, forward to, or create a ticket
-
-for the human team.
+Internal escalation creation is controlled by deterministic
+application policy outside the language model. Do not claim
+that an escalation was created based only on your own reasoning.
 """.strip()
 
     for iteration in range(max_iterations):
-        print(f"\nAGENT ITERATION {iteration + 1}")
+        logger.debug(
+            "Agent iteration request_id=%s iteration=%d",
+            request_id,
+            iteration + 1,
+)
 
         response = model_client.responses.create(
             model="gpt-5-mini",
@@ -147,37 +173,48 @@ for the human team.
         # No tool calls means the model has finished.
         if not tool_calls:
             if response.output_text:
-                return {
-                    "status": "answered",
-                    "answer": response.output_text,
-                    "iterations": iteration + 1,
-                }
+                return _complete_agent_request(
+                    request_id,
+                    {
+                       "status": "answered",
+                        "answer": response.output_text,
+                        "iterations": iteration + 1,
+                    },
+                )
 
-            return {
+            return _complete_agent_request(
+                request_id,
+                {
                 "status": "needs_human_action",
                 "answer": (
                     "The agent could not produce a final response. "
                     "Human review is required."
                 ),
                 "iterations": iteration + 1,
-            }
+            },
+            )
 
         for item in tool_calls:
             arguments = json.loads(item.arguments)
 
-            print("\nTOOL CALL:")
-            print("name:", item.name)
-            print("arguments:", arguments)
-
+            logger.info(
+                "Agent tool call request_id=%s tool=%s",
+                request_id,
+                item.name,
+            )
+            
             result = execute_tool(
                 item.name,
                 arguments,
                 original_query=query,
             )
 
-            print("\nTOOL RESULT:")
-            print(json.dumps(result, indent=2))
-
+            logger.debug(
+                "Agent tool completed request_id=%s tool=%s",
+                request_id,
+                item.name,
+            )
+            
             if (
                 item.name == "search_knowledge"
                 and not result["results"]
@@ -187,11 +224,14 @@ for the human team.
                     knowledge_found=False,
                 )
                 if not allowed:
-                    return {
+                    return _complete_agent_request(
+                        request_id,
+                        {
                         "status": "insufficient_knowledge",
                         "answer": INSUFFICIENT_KNOWLEDGE_RESPONSE,
                         "iterations": iteration + 1,
-                    }
+                    },
+                    )
                 try:
                     escalation = create_escalation_tool(
                         subject=subject,
@@ -206,10 +246,11 @@ for the human team.
 
                     )
                 except Exception as exc:
-                    print(
-                        "ESCALATION CREATION FAILED:",
-                        repr(exc),
+                    logger.exception(
+                        "Escalation creation failed request_id=%s",
+                        request_id,
                     )
+                    
                     record_audit_event(
                         request_id=request_id,
                         event_type="escalation_creation",
@@ -219,7 +260,9 @@ for the human team.
                         },
                     )
 
-                    return {
+                    return _complete_agent_request(
+                        request_id,
+                        {
                         "status": "needs_human_action",
                         "answer": (
                             "I could not find sufficiently relevant information "
@@ -230,7 +273,8 @@ for the human team.
                         "iterations": iteration + 1,
                         "escalation": None,
                         "action_status": "escalation_failed",
-                    }
+                    },
+                    )
                 record_audit_event(
                     request_id=request_id,
                     event_type="escalation_creation",
@@ -239,7 +283,9 @@ for the human team.
                         "escalation_id": escalation["id"],
                     },
                 )
-                return{
+                return _complete_agent_request(
+                    request_id,
+                    {
                     "status": "needs_human_action",
                     "answer": (
                         "I could not find sufficiently relevant information "
@@ -252,7 +298,8 @@ for the human team.
                         "status": escalation["status"],
                     },
                     "action_status": "escalation_created",
-                }
+                },
+                )
 
             input_items.append(
                 {
@@ -262,11 +309,14 @@ for the human team.
                 }
             )
 
-    return {
+    return _complete_agent_request(
+        request_id,
+        {
     "status": "needs_human_action",
     "answer": (
         "The agent reached its maximum number of reasoning "
         "steps. Human review is required."
     ),
     "iterations": max_iterations,
-}
+},
+    )
