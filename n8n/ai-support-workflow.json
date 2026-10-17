@@ -1,0 +1,265 @@
+{
+  "name": "ai-support-workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        0
+      ],
+      "id": "f885382a-e5c1-4221-9015-0e5c3c81e92f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://api:8000/tickets/agent",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"request_id\": \"{{ $json.body.request_id }}\",\n  \"subject\": \"{{ $json.body.subject }}\",\n  \"description\": \"{{ $json.body.description }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "e871420c-bb73-45fb-99d6-7f9136710a94",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "=answered",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d3b875c0-f7a9-499c-9e34-4331cfad64d2"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e6e74329-0c89-4d9b-becf-fffa3bd5d01d",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "needs_human_action",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "69ce7642-8548-408e-b268-77c8aa317afa",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "insufficient_knowledge",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -16,
+        -16
+      ],
+      "id": "2bfb5e68-c11b-4f44-ae24-9a4a624b3935",
+      "name": "Switch",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "323c3bac-10f6-457d-8201-6a0cc6de4dd6",
+              "name": "request_id",
+              "value": "n8n-dynamic-test-001",
+              "type": "string"
+            },
+            {
+              "id": "a85ab758-84b5-42ef-8784-965021543e65",
+              "name": "subject",
+              "value": "VPN connection problem",
+              "type": "string"
+            },
+            {
+              "id": "b2d4f37a-93bd-4a75-9359-d559ffaabfa4",
+              "name": "description",
+              "value": "My VPN connects but I cannot access internal company resources.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -560,
+        0
+      ],
+      "id": "4c28c931-716f-484d-9169-a228f3361497",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "support-ticket",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        -272
+      ],
+      "id": "39b29346-8f95-4a67-bda2-99152a8366b2",
+      "name": "Webhook",
+      "webhookId": "51715154-9e7e-46b8-8df3-230c4dacdf5c"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        -128
+      ],
+      "id": "a3533550-085c-4ce3-a892-7ab1d2f0f6b4",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8661aad8-4f04-4118-bfd7-fbff90695bd1",
+  "meta": {
+    "instanceId": "715774680e39dfb0800cb615b7585499b220070f8bc540e83f5a8a0cd64125f0"
+  },
+  "nodeGroups": [],
+  "id": "ZtKL8IyxZpubl9VT",
+  "tags": []
+}
