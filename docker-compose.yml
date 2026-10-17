@@ -11,7 +11,6 @@ services:
       - api
   postgres:
     image: pgvector/pgvector:pg17
-    container_name: ai-support-postgres
     environment:
       POSTGRES_DB: support_rag
       POSTGRES_USER: support_user
@@ -29,7 +28,6 @@ services:
 
   api:
     build: .
-    container_name: ai-support-api
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       DATABASE_URL: postgresql://support_user:support_password@postgres:5432/support_rag
